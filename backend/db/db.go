@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+    "fmt"
     "log"
 
     "go.mongodb.org/mongo-driver/mongo"
@@ -25,34 +26,40 @@ func InitDB() {
 	if err != nil {
 		panic(err)
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	defer func() {
-		if err := client.Disconnect(ctx); err != nil {
+		if err := client.Disconnect(context.TODO()); err != nil {
 			panic(err)
 		}
 	}()
+	createCollection(client)
+}
+
+func createCollection (client *mongo.Client) {
+	collectionName := "todos"
 
 	db = client.Database("rgt")
+	collections, err := db.ListCollectionNames(context.TODO(), map[string]interface{}{})
 
-	listCollectionNames, err := db.ListCollectionNames(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	collectionExists := false
-	for _, name := range listCollectionNames {
-		if name == "todos" {
-			collectionExists = true
-			break
-		}
-	}
+    for _, name := range collections {
+        if name == collectionName {
+            collectionExists = true
+            break
+        }
+    }
 
 	if !collectionExists {
-		err = db.CreateCollection(ctx, "todos")
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	TodosCollection = db.Collection("todos")
+        // Tạo collection nếu nó chưa tồn tại
+        err = db.CreateCollection(context.TODO(), collectionName)
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println("Collection created:", collectionName)
+    } else {
+        fmt.Println("Collection already exists:", collectionName)
+    }
 }
