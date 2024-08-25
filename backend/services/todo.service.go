@@ -6,6 +6,7 @@ import (
 	"log"
 	"rgt-backend/models"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -52,4 +53,21 @@ func NewTodoService(client *mongo.Client) *TodoService {
 
 func (s *TodoService) CreateTodo(ctx context.Context, todo *models.Todos) (*mongo.InsertOneResult, error) {
 	return s.collection.InsertOne(ctx, todo)
+}
+
+func (s *TodoService) GetTodo(ctx context.Context) ([]*models.Todos, error) {
+	cursor, err := s.collection.Find(ctx, bson.D{})
+
+	if err != nil {
+		return nil, err
+	}
+	var todo []*models.Todos
+
+	err = cursor.All(ctx, &todo)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return todo, nil
 }
